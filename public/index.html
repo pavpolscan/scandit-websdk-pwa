@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Scandit WebSDK use in PWA</title>
+    <meta name="description" content="Top page of my website">
+    <link id="favicon" rel="icon" href="https://glitch.com/edit/favicon-app.ico" type="image/x-icon">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://unpkg.com/scandit-sdk@5.1.4/build/browser/index.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            font-size: 3vh;
+            font-family: 'Open Sans', sans-serif;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #scandit-barcode-picker {
+            width: 100%;
+            height: 100%;
+            max-height: 70vh;
+        }
+
+        #scandit-barcode-result {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            width: 100%;
+        }
+
+        button,
+        button:active,
+        button[disabled]:hover {
+            --webkit-appearance: none;
+            border: none;
+            border-radius: none;
+            outline: none;
+            font-size: 0.7em;
+            padding: 0.4em 0.6em;
+            margin: 20px;
+            text-transform: uppercase;
+            font-family: 'Open Sans', sans-serif;
+            background: #2ec0cc;
+            color: white;
+        }
+
+        button:hover {
+            background: #30d0d8;
+        }
+
+        button[disabled] {
+            opacity: 0.4;
+        }
+
+        #continue-scanning-button {
+            margin-bottom: 10vh;
+        }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        This App is offline ready ✨
+      </h1>
+    </header>
+    <main>
+      <p>You can scan EAN13 and CODE128[25]! <span id="msg"></span></p>
+      <p id="guide"></p>
+      
+      <!-- Containers for the picker and the results -->
+    <div id="scandit-barcode-picker"></div>
+    <div id="scandit-barcode-result">No codes scanned yet</div>
+    <!-- Button to continue scanning after a barcode was scanned -->
+    <button id="continue-scanning-button" onclick="continueScanning()">Continue Scanning</button>
+
+    <script>
+        // Helper function called when the "Continue Scanning" button is clicked
+        function continueScanning() {
+            if (picker) {
+                continueButton.disabled = true;
+
+                // Resume scanning
+                picker.resumeScanning();
+            }
+        }
+
+        // Configure the library and activate it with a license key
+        const licenseKey = "AfN+NVqWRW6pNTmJfxRiwrAlYOjPJs8EhQbILmAxFG+lVi+MqVfzhLU0fI8CeIV3kE8/odxB7eIoABfiXRt1o25hRVuXXAk/dHXXaa9x1VJ7d6+dr2/VBdkwIRfrbqNBvn3Vqz5mttwkZMJdzh1rBnAN4FDDAcOHNxYm1UlqBmADQIVn7qIroKI/l0vxxOLMJ4m5zS0czaVNtoCCXsMmHC16gniFxw28T5xpgPZSpCkZWrGf8WMN3IkafUk0FiwLprazP7a7wrlkL/ybekeD8DMTIFEBW9Jn+t2XHrtrwrnsG8NbFB+IJNcxzoB0kkVGK5FFrV/YvOnvn2lP/wFZzGK2LszX3oAyi3HIhOt61K9A8Iga0q4JViIFWJX2Sr8UHBDOdifNCycNA7RmilHhdRF3mPkfR/nrWN2pohCJU7hqnLiwf19/h06kcixen93O/EuhumY6TVR8hktGoYpJHS72zVl0NGlx/U6V9FiLbo/rN/OqkCzkDuKIDT7nOf0yu1czw6JFsAdK4DtNsjhQHbEDMo8PMitLYHXHzvqnAOvzlIL5qswqATIPwKp6SU7V54H2fXtmKofnUfYzlgjqUwDV6t5HjgZuISuq7sLHyL25SGHcNhWBVlsq/P9FQT42vbLpHYRobo9l8B6JMHKRj1kUKCVe+GLjumVD0zPmUU6+jYKfcJUn77NomprwcOPD8KCNdnn32OHP6jjRCuL9RdovmfAGFwPew0/nT2gFysc2wNF7VHt5BwRBXfd2VrNNSNAkH+CFBBP10QjlSlVrIAi49eyX36IqeL2QPzzq4OWr1KMZ5jDd+35vWMMFrg4Wz084GmaIZ3jF/C3UVw==";
+
+        // Configure the engine location, as explained on http://docs.scandit.com/stable/web/index.html
+        // const engineLocation = "build"; // the folder containing the engine
+        // or, if using a CDN:
+        const engineLocation = "https://unpkg.com/scandit-sdk@5.x/build/";
+
+        const scannerContainer = document.getElementById("scandit-barcode-picker");
+        const resultContainer = document.getElementById("scandit-barcode-result");
+        const continueButton = document.getElementById("continue-scanning-button");
+        continueButton.disabled = true;
+        continueButton.hidden = true;
+        let picker;
+        let sdk;
+
+        ScanditSDK.configure(licenseKey, { engineLocation: engineLocation }
+        ).then(function() {
+            return ScanditSDK.BarcodePicker.create(scannerContainer, {guiStyle: ScanditSDK.BarcodePicker.GuiStyle.LASER})
+                .then(
+                    barcodePicker => {
+                        picker = barcodePicker;
+                        // Create the settings object to be applied to the scanner
+                        const scanSettings = new ScanditSDK.ScanSettings({
+                            enabledSymbologies: [ "code128","ean13"
+                            ],
+                            codeDuplicateFilter: 1000
+                        });
+                        scanSettings.getSymbologySettings(ScanditSDK.Barcode.Symbology.CODE128).setActiveSymbolCounts([25]);
+                       // scanSettings.getSymbologySettings(ScanditSDK.Barcode.Symbology.CODE128).enableChecksums(["mod10","mod11","mod16","mod43","mod47","mod103","mod1010","mod1110"]);
+                        picker.applyScanSettings(scanSettings);
+                      
+
+
+                        // If a barcode is scanned, show it to the user and pause scanning
+                        // (scanning is resumed when the user clicks "Continue Scanning")
+                        picker.on("scan", scanResult => {
+                            continueButton.hidden = false;
+                            continueButton.disabled = false;
+                            picker.pauseScanning();
+                            resultContainer.innerHTML = scanResult.barcodes.reduce((string, barcode) =>
+                                string +
+                                `${ScanditSDK.Barcode.Symbology.toHumanizedName(barcode.symbology)}: ${barcode.data}<br>`,
+                                '');
+                        });
+                        picker.on("scanError", error => {
+                            console.error(error.message);
+                        });
+                        picker.resumeScanning();
+                    })
+                .catch(error => {
+                    alert(error);
+                })
+        } );
+
+
+
+    </script>
+      
+    </main>
+
+    <footer>
+      <p><a href="https://glitch.com/edit/#!/offline-with-serviceworker">View Code</a></p>
+      <p><a href="https://glitch.com/edit/#!/remix/offline-with-serviceworker">Remix this in Glitch</a></p>
+    </footer>
+    <script src="/app.js"></script>
+    <script>
+      // Register your ServiceWorker to user's browser
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.register('/sw.js', {scope: '/'})
+      }
+    </script>
+  </body>
+</html>
